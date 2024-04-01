@@ -28,7 +28,7 @@ jarak_terdekat = [data_alamat[i] for i in indeks]
 
 @app.route('/data', methods=['GET'])
 def get_data():
-    return jsonify(jarak_terdekat)
+    return jsonify({'data' : jarak_terdekat})
 
 if __name__ == '__main__':
     app.run(debug=True)
