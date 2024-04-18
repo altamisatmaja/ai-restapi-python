@@ -54,7 +54,7 @@ def product_nearest():
         jarak_terdekat = np.argsort(jarak)[:5]
 
         produk_terdekat = [data['data'][i] for i in jarak_terdekat]
-        return jsonify({'status': 'success', 'produk_terdekat': produk_terdekat})
+        return jsonify(produk_terdekat)
     else:
         return jsonify({'status': 'error', 'message': 'Gagal mendapat data dari API.'}), 500
 
