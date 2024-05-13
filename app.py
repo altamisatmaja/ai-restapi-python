@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask_cors import CORS, cross_origin
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from haversine import haversine
@@ -8,57 +9,44 @@ import os
 
 from locale import str
 
-from builtins import Exception, float
+from builtins import Exception, ValueError, float, map, tuple
 
 app = Flask(__name__)
+CORS(app)
 
 load_dotenv()
 
-data_alamat = [
-    {"kota": "Ngawi", "latitude": -6.2088, "longitude": 106.8456},
-    {"kota": "Jember", "latitude": -7.2575, "longitude": 112.7521},
-    {"kota": "Jokowi", "latitude": -6.9175, "longitude": 107.6191},
-    {"kota": "Anis", "latitude": -6.1751, "longitude": 106.865},
-    {"kota": "Ganjar", "latitude": -7.2761, "longitude": 112.7916},
-    {"kota": "Ganjar", "latitude": -7.2761, "longitude": 112.7916},
-    {"kota": "Ganjar", "latitude": -7.2761, "longitude": 112.7916},
-    {"kota": "Ganjar", "latitude": -7.2761, "longitude": 112.7916},
-]
+@app.route('/product/<string:latitude_user>/<string:longitude_user>/', methods=['GET'])
+@cross_origin()
+def product_nearest(latitude_user, longitude_user):
+    try:
+        latitude = float(latitude_user)
+        longitude = float(longitude_user)
+    except ValueError:
+        return jsonify({'status': 'error', 'message': 'Invalid latitude or longitude parameter.'}), 400
 
-data = np.array([[kota['latitude'], kota['longitude']] for kota in data_alamat])
-
-lokasi_saat_ini = np.array([-6.2088, 106.8456])
-
-distances = [haversine((lokasi_saat_ini[0], lokasi_saat_ini[1]), (lat, lon)) for lat, lon in data]
-
-indeks = np.argsort(distances)[:7]
-
-jarak_terdekat = [data_alamat[i] for i in indeks]
-
-@app.route('/data', methods=['GET'])
-def get_data():
-    return jsonify({'data' : jarak_terdekat})
-
-@app.route('/product', methods=['GET'])
-def product_nearest():
-    response = requests.get('http://127.0.0.1:8000/api/auth/product/nearest')
+    response = requests.get('http://127.0.0.1:8000/api/product/nearest')
     if response.status_code == 200:
         data = response.json()
 
         lokasi = [(float(item['partner'][0]['latitude']), float(item['partner'][0]['longitude'])) for item in data['data']]
 
-        lokasi_saat_ini = (-6.2088, 106.8456)
+        lokasi_saat_ini = (latitude, longitude)
 
         jarak = [haversine(lokasi_saat_ini, loc) for loc in lokasi]
 
-        jarak_terdekat = np.argsort(jarak)[:5]
+        jarak_terdekat = np.argsort(jarak)[:10]
 
         produk_terdekat = [data['data'][i] for i in jarak_terdekat]
-        return jsonify(produk_terdekat)
+        response_target = jsonify(produk_terdekat)
+        response_target.headers.add('Access-Control-Allow-Origin', 'http://127.0.0.1:8000')
+        
+        return response_target
     else:
         return jsonify({'status': 'error', 'message': 'Gagal mendapat data dari API.'}), 500
 
 @app.route('/nearest', methods=['GET'])
+@cross_origin()
 def nearest():
     response = requests.get('http://127.0.0.1:8000/api/auth/product/nearest')
 
@@ -90,7 +78,7 @@ def nearest():
                     'provinsi_partner': provinsi_partner
                 })
             
-            return jsonify({'status': 'success', 'data': product_data})
+            return jsonify({'status': 'success', 'product': product_data})
         else:
             return jsonify({'status': 'error', 'message': 'Tidak ada data.'}), 404
     else:
