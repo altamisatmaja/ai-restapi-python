@@ -39,7 +39,7 @@ def product_nearest(latitude_user, longitude_user):
 
         produk_terdekat = [data['data'][i] for i in jarak_terdekat]
         response_target = jsonify(produk_terdekat)
-        response_target.headers.add('Access-Control-Allow-Origin', 'http://127.0.0.1:8000')
+        # response_target.headers.add('Access-Control-Allow-Origin', 'http://127.0.0.1:8000/')
         
         return response_target
     else:
